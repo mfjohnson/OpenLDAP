@@ -1,0 +1,46 @@
+---
+- remote_user: root 
+  hosts: ldap
+  name: Setup Demo LDAP Server
+  serial: 10
+  vars:
+     dcBase: "hortonworks"
+  tasks:
+  - name: shutdown the ldap service
+    service: name=slapd enabled=no state=stopped
+    ignore_errors: true
+
+  - name: remove old ldap configs
+    file: name=/var/lib/ldap state=absent
+
+  - name: Install OpenLDAP Server
+    yum: name={{ item.name }} state=latest
+    with_items:
+    - { name: "openldap" }
+    - { name: "openldap-clients" } # Does the client need to be on every server in the cluster?
+    - { name: "openldap-servers" }
+  - name: Generate LDAP Password from secrete key
+    shell: "slappasswd -s hadoop"
+    register: secretePassword
+  - debug: msg="Password = {{ secretePassword.stdout }}"
+  - name: generate the Database files
+    template: src=DB_CONFIG.example.j2 dest=/var/lib/ldap/DB_CONFIG
+  - name: Change /var/lib/ldap directory permissions
+    file: path=/var/lib/ldap owner=ldap
+#    command: "chown ldap:ldap /var/lib/ldap/*"
+
+
+  - name: enable ldap service and start
+    service: name=slapd enabled=yes state=started
+  - name: Configure LDAP cosine
+    shell: ldapadd -Y EXTERNAL -H ldapi:/// -D "cn=config" -f /etc/openldap/schema/cosine.ldif
+  - name: Configure LDAP nis
+    shell: ldapadd -Y EXTERNAL -H ldapi:/// -D "cn=config" -f /etc/openldap/schema/nis.ldif
+  - name: Update configuration for targeted ldap
+    template: src=hdp_ldapConfig.ldif.j2 dest=//etc/openldap/changes.ldif
+  - name: Apply LDAP Configurations
+    shell: "ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/openldap/changes.ldif"
+  - name: Update configuration for targeted base
+    template: src=base.ldif.j2 dest=//etc/openldap/base.ldif
+  - name: Apply LDAP Configurations
+    shell: "ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/openldap/base.ldif"    

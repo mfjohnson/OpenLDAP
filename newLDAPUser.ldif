@@ -1,0 +1,23 @@
+dn: uid=nifiadmin,ou=Users,dc=hortonworks,dc=hdp
+changetype: add
+objectClass: inetOrgPerson
+description: NiFi Admin user.
+cn: Nifi Admin
+sn: Admin
+uid: nifiadmin
+
+dn: uid=nifiuser1,ou=Users,dc=hortonworks,dc=hdp
+changetype: add
+objectClass: inetOrgPerson
+description: NiFi User 1.
+cn: Nifi User1
+sn: User1
+uid: nifiuser1
+
+dn: uid=nifiuser2,ou=Users,dc=hortonworks,dc=hdp
+changetype: add
+objectClass: inetOrgPerson
+description: NiFi User 2.
+cn: Nifi User2
+sn: User2
+uid: nifiuser2
